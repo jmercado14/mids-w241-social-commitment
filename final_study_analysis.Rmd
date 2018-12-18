@@ -15,6 +15,7 @@ library(data.table)
 library(lmtest)
 library(pwr)
 library(lsr)
+library(cobalt)
 ```
 
 
@@ -58,7 +59,45 @@ names(d2) <- c("user_id", "treatment_seq", "location_lat", "location_long", "nam
                "day2_num_persons", "day2_treatment", "day2_steps", "day2_upload_id", "day2_upload_filename", "day2_upload_size", "day_2_upload_filetype",
                "day3_num_persons", "day3_treatment", "day3_steps", "day3_upload_id", "day3_upload_filename", "day3_upload_size", "day3_upload_filetype")
 
+# encode demographics
+# gender
+d2$gender[d2$gender == "Male"] <- 0
+d2$gender[d2$gender == "Female"] <- 1
+d2$gender[d2$gender == "Gender non-conforming"] <- 2
+d2$gender[is.na(d2$gender)] <- 2
+d2$gender <- as.numeric(d2$gender)
+
+# age
+d2$age_range[d2$age_range == "18 - 24"] <- 0
+d2$age_range[d2$age_range == "25 - 34"] <- 1
+d2$age_range[d2$age_range == "35 - 44"] <- 2
+d2$age_range[d2$age_range == "45 - 54"] <- 3
+d2$age_range[d2$age_range == "55 - 64"] <- 4
+d2$age_range[d2$age_range == "65+"] <- 5
+d2$age_range[is.na(d2$age_range)] <- 6
+d2$age_range <- as.numeric(d2$age_range)
+
+# lives with others
+d2$lives_with_others[d2$lives_with_others == "Alone"] <- 0
+d2$lives_with_others[d2$lives_with_others == "With others"] <- 1
+d2$lives_with_others[is.na(d2$lives_with_others)] <- 2
+d2$lives_with_others <- as.numeric(d2$lives_with_others)
+
+# knows us
+d2$know_us[d2$know_us == "No"] <- 0
+d2$know_us[d2$know_us == "Yes"] <- 1
+d2$know_us[is.na(d2$know_us)] <- 2
+d2$know_us <- as.numeric(d2$know_us)
+
+# covariate balance
+bal.tab(treatment_seq ~ gender + age_range + lives_with_others + know_us + location_lat + location_long, 
+        data = d2)
+
 ```
+
+
+RESULTS:
+
 ## Unless I completely misunbderstood Alex's point during OH, if we check for ordering effect in the way he suggested, there's going to be exact collinearity and coefficient is not estimable. Jenni suggested testing if previous day's treatment is highly predictive of next day's step count (thank you Jenni!) ##
 *Checking for ordering/priming effect*
 *Is previous day's treatment highly predictive of how many steps are taken today?*
@@ -113,7 +152,7 @@ d1[d1$treatment == 1 | d1$treatment == 2, ]$treatment <- 3
 T-test and power calculations
 ```{r}
 ###  Control vs digital 
-t.test(d[treatment == 0]$outcome, d[treatment == 1]$outcome, paired = F)
+t.test(d[treatment == 0]$outcome, d[treatment == 1]$outcome, paired = T)
 cohensD(d[treatment == 0]$outcome, d[treatment == 1]$outcome, method = "unequal")
 
 ### Control vs in person 
