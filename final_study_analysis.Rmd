@@ -3,7 +3,6 @@ title: 'Final Study Data Analysis'
 author: "April Kim, Jennifer Podracky, Saurav Datta"
 output:
   pdf_document: default
-urlcolor: blue
 ---
 
 ```{r setup, include=FALSE}
@@ -31,6 +30,7 @@ d2$Q15 <- as.numeric(gsub("\\,", "", d2$Q15))
 # Not applicable = 0
 # Through digital means = 1
 # In person = 2
+# Both in person and through digital means = 3
 
 d2[d2$Q6 %like% "Not applicable", ]$Q6 <- 0
 d2[d2$Q10 %like% "Not applicable", ]$Q10 <- 0
@@ -44,91 +44,85 @@ d2[d2$Q6 %like% "Through digital means", ]$Q6 <- 1
 d2[d2$Q10 %like% "Through digital means", ]$Q10 <- 1
 d2[d2$Q14 %like% "Through digital means", ]$Q14 <- 1
 
-# names(d2) <- c("name", "email", "know_us", "day1_treatment", "step_day1", "day2_treatment", "step_day2", "day3_treatment", "step_day3", "treatment_seq")
+d2[d2$Q6 %like% "Both in person and through digital means", ]$Q6 <- 3
+d2[d2$Q10 %like% "Both in person and through digital means", ]$Q10 <- 3
+# d2[d2$Q14 %like% "Both in person and through digital means", ]$Q14 <- 3
 
-names(d2) <- c("user_id", "treatment_seq", "location_lat", "location_long", "name", "email", "gender", "age_range", "location", "lives_with_others", "submitted_response", "noncompliance_ind", "know_us",
+d2$Q6 <- as.numeric(as.character(d2$Q6))
+d2$Q10 <- as.numeric(as.character(d2$Q10))
+d2$Q14 <- as.numeric(as.character(d2$Q14))
+
+names(d2) <- c("user_id", "treatment_seq", "location_lat", "location_long", "name", "email", 
+               "gender", "age_range", "location", "lives_with_others", "submitted_response", "noncompliance_ind", "know_us",
                "day1_num_persons", "day1_treatment", "day1_steps", "day1_upload_id", "day1_upload_filename", "day1_upload_size", "day_1_upload_filetype", 
                "day2_num_persons", "day2_treatment", "day2_steps", "day2_upload_id", "day2_upload_filename", "day2_upload_size", "day_2_upload_filetype",
                "day3_num_persons", "day3_treatment", "day3_steps", "day3_upload_id", "day3_upload_filename", "day3_upload_size", "day3_upload_filetype")
 
-# for treatment received on what day below
-# 1 = day1
-# 2 = day2
-# 3 = day3
-
-d2$treatment1_day_received <- NA
-d2$treatment2_day_received <- NA
-d2$treatment3_day_received <- NA
-
-d2[d2$treatment_seq == 1,]$treatment1_day_received <- 1
-d2[d2$treatment_seq == 1,]$treatment2_day_received <- 2
-d2[d2$treatment_seq == 1,]$treatment3_day_received <- 3
-
-d2[d2$treatment_seq == 2,]$treatment1_day_received <- 1
-d2[d2$treatment_seq == 2,]$treatment2_day_received <- 3
-d2[d2$treatment_seq == 2,]$treatment3_day_received <- 2
-
-d2[d2$treatment_seq == 3,]$treatment1_day_received <- 2
-d2[d2$treatment_seq == 3,]$treatment2_day_received <- 1
-d2[d2$treatment_seq == 3,]$treatment3_day_received <- 3
-
-d2[d2$treatment_seq == 4,]$treatment1_day_received <- 2
-d2[d2$treatment_seq == 4,]$treatment2_day_received <- 3
-d2[d2$treatment_seq == 4,]$treatment3_day_received <- 1
-
-d2[d2$treatment_seq == 5,]$treatment1_day_received <- 3
-d2[d2$treatment_seq == 5,]$treatment2_day_received <- 1
-d2[d2$treatment_seq == 5,]$treatment3_day_received <- 2
-
-d2[d2$treatment_seq == 6,]$treatment1_day_received <- 3
-d2[d2$treatment_seq == 6,]$treatment2_day_received <- 2
-d2[d2$treatment_seq == 6,]$treatment3_day_received <- 1
 ```
-
+## Unless I completely misunbderstood Alex's point during OH, if we check for ordering effect in the way he suggested, there's going to be exact collinearity and coefficient is not estimable. Jenni suggested testing if previous day's treatment is highly predictive of next day's step count (thank you Jenni!) ##
 *Checking for ordering/priming effect*
-For this part, we're interested in seeing if receiving certain treatment on what day has any effect on the outcome, so the outcome will be whether or not the subject had more than 5000 steps on the third day. Analysis will be limited to those who actually followed their treatment assignment.
-
+*Is previous day's treatment highly predictive of how many steps are taken today?*
 ```{r}
-d2_a <- d2
-d2_a$outcome <- ifelse(d2_a$day3_steps > 5000, 1, 0)
+# downsize to fewer columns so as to not update the original data
+# and it's easier look through :)
+# n = 75
+df <- d2[,c(2,5,7,8,15,16,22,23,29,30)]
 
-# limit to those who followed directions
-d2_a <- rbind(d2_a[d2_a$treatment_seq == 1 & d2_a$day1_treatment == 0 & d2_a$day2_treatment == 1 & d2_a$day3_treatment == 2,],
-              d2_a[d2_a$treatment_seq == 2 & d2_a$day1_treatment == 0 & d2_a$day2_treatment == 2 & d2_a$day3_treatment == 1,],
-              d2_a[d2_a$treatment_seq == 3 & d2_a$day1_treatment == 1 & d2_a$day2_treatment == 0 & d2_a$day3_treatment == 2,],
-              d2_a[d2_a$treatment_seq == 4 & d2_a$day1_treatment == 1 & d2_a$day2_treatment == 2 & d2_a$day3_treatment == 0,],
-              d2_a[d2_a$treatment_seq == 5 & d2_a$day1_treatment == 2 & d2_a$day2_treatment == 0 & d2_a$day3_treatment == 1,],
-              d2_a[d2_a$treatment_seq == 6 & d2_a$day1_treatment == 2 & d2_a$day2_treatment == 1 & d2_a$day3_treatment == 0,])
+# remove subjects/rows who were noncompliant 
+# n = 24
+df <- df[rowSums(is.na(df[,c(5:10)])) != ncol(df[,c(5:10)]), ]
 
-# interested in interaction between treatment and day
-m_a <- lm(outcome ~ day1_treatment:treatment1_day_received + day2_treatment:treatment2_day_received + day3_treatment:treatment3_day_received +
-             day1_steps + day2_steps, data = d2_a)
-m_a
-coeftest(m_a)
+# day 3 steps using day 1 and 2 treatment
+m1 <- lm(day3_steps ~ day1_treatment + day2_treatment, df)
+summary(m1)
+# ATE (standard error)
+print(paste0("Estimated effect of day1 treatment: ", signif(m1$coefficients[2], 3),
+             " (", signif(coef(summary(m1))[2,2], 3), ")"))
+print(paste0("Estimated effect of day2 treatment: ", signif(m1$coefficients[3], 3),
+             " (", signif(coef(summary(m1))[3,2], 3), ")"))
+# include days1,2 steps as covariates to uhderstand
+# subjects' step counts hange as a function of
+# treatment against waht they would typically do
+m2 <- lm(day3_steps ~ day1_treatment + day2_treatment + day1_steps + day2_steps, df)
+summary(m2)
+print(paste0("Estimated effect of day1 treatment: ", signif(m2$coefficients[2], 3),
+             " (", signif(coef(summary(m2))[2,2], 3), ")"))
+print(paste0("Estimated effect of day2 treatment: ", signif(m2$coefficients[3], 3),
+             " (", signif(coef(summary(m2))[3,2], 3), ")"))
 ```
-Sequence of treatment isn't likely to impact outcome.
+We do not see that the previous days' treatment assignments to predict the last day's step count is highgly predicitive and significant, which is super for us!
 
-
-
-T-test and power calculations
+*Condense treatment sequence to 1 treatment*
 ```{r}
 # get data frame in workable format
-d <- rbindlist(list(d2_a[1:nrow(d2_a),c("day1_treatment","day1_steps")],
-                    d2_a[1:nrow(d2_a),c("day2_treatment","day2_steps")],
-                    d2_a[1:nrow(d2_a),c("day3_treatment","day3_steps")]))
+d <- rbindlist(list(df[1:nrow(df),c("day1_treatment","day1_steps")],
+                    df[1:nrow(df),c("day2_treatment","day2_steps")],
+                    df[1:nrow(df),c("day3_treatment","day3_steps")]))
 names(d) <- c("treatment","steps")
 d$outcome <- ifelse(d$steps > 5000, 1, 0)
 
+# combine digital and in person as one treatment as
+# "Both in person and through digital means"
+d1 <- d
+d1[d1$treatment == 1 | d1$treatment == 2, ]$treatment <- 3
+```
+
+T-test and power calculations
+```{r}
 ###  Control vs digital 
-t.test(d[treatment == 0]$outcome, d[treatment == 1]$outcome, paired = T)
-cohensD(d[treatment == 0]$outcome, d[treatment == 1]$outcome, method = "paired")
+t.test(d[treatment == 0]$outcome, d[treatment == 1]$outcome, paired = F)
+cohensD(d[treatment == 0]$outcome, d[treatment == 1]$outcome, method = "unequal")
 
 ### Control vs in person 
-t.test(d[treatment == 0]$outcome, d[treatment == 2]$outcome, paired = T)
-cohensD(d[treatment == 0]$outcome, d[treatment == 2]$outcome, method = "paired")
+t.test(d[treatment == 0]$outcome, d[treatment == 2]$outcome, paired = F)
+cohensD(d[treatment == 0]$outcome, d[treatment == 2]$outcome, method = "unequal")
+
+### Control vs in person + digital
+t.test(d1[treatment == 0]$outcome, d1[treatment == 3]$outcome, paired = F)
+cohensD(d1[treatment == 0]$outcome, d1[treatment == 3]$outcome, method = "unequal")
 
 ### In person vs digital 
-t.test(d[treatment == 2]$outcome, d[treatment == 1]$outcome, paired = T)
+t.test(d[treatment == 2]$outcome, d[treatment == 1]$outcome, paired = F)
 ```
 no significant difference in both comparisons
 
