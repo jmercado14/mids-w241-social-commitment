@@ -5,6 +5,7 @@ treatments <- c(1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6)
 
 assignment <- sample(treatments)
 assignment
+#  1 4 2 4 4 6 6 2 1 5 3 6 5 3 3 2 5 1
 
 # full
 treatments <- c(
@@ -21,6 +22,7 @@ assignment
 # should start with 3 6 2 2 6 1 ...
 
 # random assignment of awards
-winners <- sample(seq(from = 1, to = 51, by = 1), size = 20, replace = FALSE)
+# 60 respondents across pilot and final study, 20 total winners
+winners <- sample(seq(from = 1, to = 60, by = 1), size = 20, replace = FALSE)
 sort(winners)
-# 7  9 10 11 16 23 24 27 28 29 30 32 35 43 44 45 46 48 50 51
+# 8 10 11 12 13 19 20 28 29 33 35 37 41 43 51 54 55 56 57 60
