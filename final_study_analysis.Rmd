@@ -101,6 +101,9 @@ d <- rbindlist(list(df[1:nrow(df),c("day1_treatment","day1_steps")],
 names(d) <- c("treatment","steps")
 d$outcome <- ifelse(d$steps > 5000, 1, 0)
 
+ITT_lm <- lm(outcome ~ treatment, data = d)
+summary(ITT_lm)$coefficients[2]
+
 # combine digital and in person as one treatment as
 # "Both in person and through digital means"
 d1 <- d
