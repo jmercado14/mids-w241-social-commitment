@@ -156,7 +156,9 @@ p_gender <- ggplot(d.gender, aes(x=gender, fill = factor(treatment2))) +
   theme_minimal() + theme(legend.position="top") +
   xlab("") + ylab("") + ggtitle("Gender") +
   guides(fill = guide_legend(title = "Assignment")) +
-  scale_fill_discrete(labels = c("Control", "Treatment"))
+  scale_fill_discrete(labels = c("Control", "Treatment")) +
+  scale_x_continuous(breaks = c(0, 1, 2), 
+                     labels = c('Male', 'Female', 'Gender non-conforming'))
 
 d.age <- d[, c("age_range", "treatment2")]
 p_age <- ggplot(d.age, aes(x=age_range, fill = factor(treatment2))) + 
