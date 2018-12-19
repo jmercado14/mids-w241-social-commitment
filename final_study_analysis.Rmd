@@ -202,11 +202,17 @@ grid.arrange(p_gender, p_age, p_others, p_know_us,
 ##T-test and power calculations##
 ```{r}
 ###  Control vs treatment (digital+in person)
-t.test(d[treatment == 0]$outcome, d[treatment == 1]$outcome)
+t.test(d[treatment2 == 0]$outcome, d[treatment2 == 1]$outcome)
 # since we fail to reject the null hypothesis, 
 # let's calculate number of subjects needed for 80% power
-effect_size <- cohensD(d[treatment == 0]$outcome, d[treatment == 1]$outcome)
+effect_size <- cohensD(d[treatment2 == 0]$outcome, d[treatment2 == 1]$outcome)
 pwr.t.test(power = 0.8, d = effect_size, sig.level = 0.05, type = "two.sample")
+
+# if we were to look at digital and in person separately
+# digital
+t.test(d[treatment == 0]$outcome, d[treatment == 1]$outcome)
+# in person
+t.test(d[treatment == 0]$outcome, d[treatment == 2]$outcome)
 ```
 
 
