@@ -225,24 +225,24 @@ pwr.t.test(power = 0.8, d = effect_size_person, sig.level = 0.05, type = "two.sa
 '%!in%' <- function(x,y)!('%in%'(x,y))
 # limit to those who complied and
 # get data frame in workable format
-d_complied <- rbindlist(list(subset(df, treatment_seq == 1 & df$day1_treatment == assigned_treatment_seq[1,1]
-                                    & df$day2_treatment == assigned_treatment_seq[1,2]
-                                    & df$day3_treatment == assigned_treatment_seq[1,3]),
-                             subset(df, treatment_seq == 2 & df$day1_treatment == assigned_treatment_seq[2,1]
-                                    & df$day2_treatment == assigned_treatment_seq[2,2]
-                                    & df$day3_treatment == assigned_treatment_seq[2,3]),
-                             subset(df, treatment_seq == 3 & df$day1_treatment == assigned_treatment_seq[3,1]
-                                    & df$day2_treatment == assigned_treatment_seq[3,2]
-                                    & df$day3_treatment == assigned_treatment_seq[3,3]),
-                             subset(df, treatment_seq == 4 & df$day1_treatment == assigned_treatment_seq[4,1]
-                                    & df$day2_treatment == assigned_treatment_seq[4,2]
-                                    & df$day3_treatment == assigned_treatment_seq[4,3]),
-                             subset(df, treatment_seq == 5 & df$day1_treatment == assigned_treatment_seq[5,1]
-                                    & df$day2_treatment == assigned_treatment_seq[5,2]
-                                    & df$day3_treatment == assigned_treatment_seq[5,3]),
-                             subset(df, treatment_seq == 6 & df$day1_treatment == assigned_treatment_seq[6,1]
-                                    & df$day2_treatment == assigned_treatment_seq[6,2]
-                                    & df$day3_treatment == assigned_treatment_seq[6,3])
+d_complied <- rbindlist(list(subset(df, treatment_seq == 1 & df$day1_treatment == assigned_treatment_seq[1,2]
+                                    & df$day2_treatment == assigned_treatment_seq[1,3]
+                                    & df$day3_treatment == assigned_treatment_seq[1,4]),                            
+                             subset(df, treatment_seq == 2 & df$day1_treatment == assigned_treatment_seq[2,2]
+                                    & df$day2_treatment == assigned_treatment_seq[2,3]
+                                    & df$day3_treatment == assigned_treatment_seq[2,4]),
+                             subset(df, treatment_seq == 3 & df$day1_treatment == assigned_treatment_seq[3,2]
+                                    & df$day2_treatment == assigned_treatment_seq[3,3]
+                                    & df$day3_treatment == assigned_treatment_seq[3,4]),
+                             subset(df, treatment_seq == 4 & df$day1_treatment == assigned_treatment_seq[4,2]
+                                    & df$day2_treatment == assigned_treatment_seq[4,3]
+                                    & df$day3_treatment == assigned_treatment_seq[4,4]),
+                             subset(df, treatment_seq == 5 & df$day1_treatment == assigned_treatment_seq[5,2]
+                                    & df$day2_treatment == assigned_treatment_seq[5,3]
+                                    & df$day3_treatment == assigned_treatment_seq[5,4]),
+                             subset(df, treatment_seq == 6 & df$day1_treatment == assigned_treatment_seq[6,2]
+                                    & df$day2_treatment == assigned_treatment_seq[6,3]
+                                    & df$day3_treatment == assigned_treatment_seq[6,4])
 ))
 d_not_complied <- subset(df, userId %!in% d_complied$userId)
 d_not_complied_ok <- subset(d_not_complied, d_not_complied$day1_treatment != d_not_complied$day2_treatment & 
