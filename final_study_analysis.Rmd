@@ -211,8 +211,12 @@ pwr.t.test(power = 0.8, d = effect_size, sig.level = 0.05, type = "two.sample")
 # if we were to look at digital and in person separately
 # digital
 t.test(d[treatment == 0]$outcome, d[treatment == 1]$outcome)
+effect_size_digital <- cohensD(d[treatment == 0]$outcome, d[treatment == 1]$outcome)
+pwr.t.test(power = 0.8, d = effect_size_digital, sig.level = 0.05, type = "two.sample")
 # in person
 t.test(d[treatment == 0]$outcome, d[treatment == 2]$outcome)
+effect_size_person <- cohensD(d[treatment == 0]$outcome, d[treatment == 2]$outcome)
+pwr.t.test(power = 0.8, d = effect_size_person, sig.level = 0.05, type = "two.sample")
 ```
 
 
