@@ -92,7 +92,9 @@ d2$know_us <- as.numeric(d2$know_us)
 # covariate balance
 bal.tab(treatment_seq ~ gender + age_range + lives_with_others + know_us + location_lat + location_long, 
         data = d2)
-
+cov_check <- lm(treatment_seq ~ gender + age_range + lives_with_others + know_us + location_lat + location_long, 
+        data = d2)
+summary(cov_check)
 ```
 
 
