@@ -233,13 +233,19 @@ xlab("") + ylab("Step counts") + theme_bw() +
 ```
 
 
-## For control vs digital vs in person ##
+## For control vs digital and control vs in person ##
 ```{r}
-fit_3 <- lm(outcome ~ treatment + userId, d)
+d$treatment <- factor(d$treatment)
+fit_3 <- lm(outcome ~ treatment + userId , d)
 # robust se
 se_3 <- sqrt(diag(vcovHC(fit_3, type = 'HC')))
 
-fit_3_covariates <- lm(outcome ~ treatment + userId + age_range + gender + lives_with_others + know_us + location_lat + location_long, d)
+# remove intercept
+fit_3.1 <- lm(outcome ~ treatment + userId -1, d)
+# robust se
+se_3.1 <- sqrt(diag(vcovHC(fit_3, type = 'HC')))
+
+fit_3_covariates <- lm(outcome ~ treatment + age_range + gender + lives_with_others + know_us + location_lat + location_long, d)
 # robust se
 se_3_covariates <- sqrt(diag(vcovHC(fit_3_covariates, type = 'HC')))
 
@@ -252,20 +258,30 @@ print(paste0("Estimated effect of treatment (control, in person, digital) + cova
 ```
 
 ```{r, results='asis'}
+stargazer(fit_3.1,
+          se=list(se_3),
+          omit = c("treatment0"),
+          dep.var.labels=c("Steps > 5000"),
+          covariate.labels=c('Commit in person', 'Commit digitally', "User ID"),
+          omit.stat=c("all"))
+```
+
+```{r, results='asis'}
 stargazer(fit_3, fit_3_covariates, 
           se=list(se_3, se_3_covariates),
-          dep.var.labels=c("Steps > 0"),
+          dep.var.labels=c("Steps > 5000"),
           covariate.labels=c("Treatment", "User ID", "Age range", "Gender", "Has housemate", "Knows us", "Latitute", "Longitude"),
           omit.stat=c("all"))
 ```
 
-## For control vs treatment ##
+## test hypothesis that telling others make it more likely to take >5000 steps (control vs treatment) ##
 ```{r}
-fit_2 <- lm(outcome ~ treatment2 + userId, d)
+#suppress intercept term
+fit_2 <- lm(outcome ~ treatment2 + userId -1, d)
 # robust se
 se_2 <- sqrt(diag(vcovHC(fit_2, type = 'HC')))
 
-fit_2_covariates <- lm(outcome ~ treatment2 + userId + age_range + gender + lives_with_others + know_us + location_lat + location_long, d)
+fit_2_covariates <- lm(outcome ~ treatment2 + age_range + gender + lives_with_others + know_us + location_lat + location_long, d)
 # robust se
 se_2_covariates <- sqrt(diag(vcovHC(fit_2_covariates, type = 'HC')))
 
@@ -279,9 +295,17 @@ print(paste0("Estimated effect of treatment (control, treatment) + covariates: "
 ```
 
 ```{r, results='asis'}
+stargazer(fit_2,
+          se=list(se_2),
+          dep.var.labels=c("Steps > 5000"),
+          covariate.labels=c("Social commitment", "User ID"),
+          omit.stat=c("all"))
+```
+
+```{r, results='asis'}
 stargazer(fit_2, fit_2_covariates, 
           se=list(se_2, se_2_covariates),
-          dep.var.labels=c("Steps > 0"),
+          dep.var.labels=c("Steps > 5000"),
           covariate.labels=c("Treatment", "User ID", "Age range", "Gender", "Has housemate", "Knows us", "Latitute", "Longitude"),
           omit.stat=c("all"))
 ```
