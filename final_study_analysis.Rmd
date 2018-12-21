@@ -80,8 +80,8 @@ head(d2, 5)
 #Covariate Balance Check 1
 bal.tab(as.numeric(treatment_seq) ~ gender + age_range + lives_with_others + know_us + location_lat + location_long, 
         data = d2)
-cov_check <- lm(as.numeric(treatment_seq) ~ gender + age_range + lives_with_others + know_us + location_lat + location_long, 
-                data = d2)
+cov_check <- glm(treatment_seq ~ gender + age_range + lives_with_others + know_us + location_lat + location_long, 
+                data = d2, family = "binomial")
 summary(cov_check)
 ```
 
