@@ -34,6 +34,8 @@ d2[UserId == 65,]$Q10 <- "In person"
 d2[UserId == 13,]$Q6 <- "Through digital means"
 # stringsAsFactors = F)
 names(d2) <- str_replace_all(names(d2), c(" " = "." , "," = "" ))
+# subset d2 for those who responded (Submitted.Data = 1)
+d2 <- d2[Submitted.Data == 1]
 
 # Not applicable = 0
 # Through digital means = 1
@@ -83,27 +85,66 @@ d2$know_us[is.na(d2$know_us)] <- 2
 head(d2, 5)
 
 #Covariate Balance Check
-bal.tab(treatment_seq ~ gender + age_range + lives_with_others + know_us + location_lat + location_long, 
+bal.tab(treatment_seq ~ factor(gender) + factor(age_range) + factor(lives_with_others) + factor(know_us) + location_lat + location_long, 
         data = d2)
-cov_check <- lm(treatment_seq ~ gender + age_range + lives_with_others + know_us + location_lat + location_long, 
+cov_check <- lm(treatment_seq ~ factor(gender) + factor(age_range) + factor(lives_with_others) + factor(know_us) + location_lat + location_long, 
                 data = d2)
 summary(cov_check)
 ```
 
 
-##Checking for ordering/priming effect##
+##Checking for ordering/priming effect AND adding non-compliant but okay users##
 ##Is previous day's treatment highly predictive of how many steps are taken today?##
 ```{r}
-# n = 75
-df <- d2
+'%!in%' <- function(x,y)!('%in%'(x,y))
+# n = 51
+df1 <- d2
 
-# remove subjects/rows who were non-compliant 
-# n = 24
-df <- df[rowSums(is.na(df[,c(3:8)])) != ncol(df[,c(3:8)]), ]
+# remove subjects/rows who were non-compliant (n = 2)
+# n = 49
+df1 <- df1[rowSums(is.na(df1[,c(6:8)])) != ncol(df1[,c(6:8)]), ]
 
-head(df, 5)
+head(df1, 5)
 
-# day 3 steps using day 1 and 2 treatment
+# n = 30
+d_followed_treatment_sequence <- rbindlist(list(subset(df1, treatment_seq == 1 & df1$day1_treatment == assigned_treatment_seq[1,2]
+                                                       & df1$day2_treatment == assigned_treatment_seq[1,3]
+                                                       & df1$day3_treatment == assigned_treatment_seq[1,4]),                            
+                                                subset(df1, treatment_seq == 2 & df1$day1_treatment == assigned_treatment_seq[2,2]
+                                                       & df1$day2_treatment == assigned_treatment_seq[2,3]
+                                                       & df1$day3_treatment == assigned_treatment_seq[2,4]),
+                                                subset(df1, treatment_seq == 3 & df1$day1_treatment == assigned_treatment_seq[3,2]
+                                                       & df1$day2_treatment == assigned_treatment_seq[3,3]
+                                                       & df1$day3_treatment == assigned_treatment_seq[3,4]),
+                                                subset(df1, treatment_seq == 4 & df1$day1_treatment == assigned_treatment_seq[4,2]
+                                                       & df1$day2_treatment == assigned_treatment_seq[4,3]
+                                                       & df1$day3_treatment == assigned_treatment_seq[4,4]),
+                                                subset(df1, treatment_seq == 5 & df1$day1_treatment == assigned_treatment_seq[5,2]
+                                                       & df1$day2_treatment == assigned_treatment_seq[5,3]
+                                                       & df1$day3_treatment == assigned_treatment_seq[5,4]),
+                                                subset(df1, treatment_seq == 6 & df1$day1_treatment == assigned_treatment_seq[6,2]
+                                                       & df1$day2_treatment == assigned_treatment_seq[6,3]
+                                                       & df1$day3_treatment == assigned_treatment_seq[6,4])
+))
+
+# n = 19
+d_not_followed_treatment_sequence <- subset(df1, userId %!in% d_followed_treatment_sequence$userId)
+
+d_not_followed_but_ok <- subset(d_not_followed_treatment_sequence, d_not_followed_treatment_sequence$day1_treatment != d_not_followed_treatment_sequence$day2_treatment & 
+                                  d_not_followed_treatment_sequence$day1_treatment != d_not_followed_treatment_sequence$day3_treatment &
+                                  d_not_followed_treatment_sequence$day2_treatment != d_not_followed_treatment_sequence$day3_treatment)
+
+na.omit(d_not_followed_but_ok)
+d_not_followed_no_NA <- subset(d_not_followed_treatment_sequence, userId %!in% d_not_followed_but_ok$userId)
+# n = 15
+d_not_followed_no_NA <- na.omit(d_not_followed_no_NA)
+
+# n = 33
+df <- rbind(d_followed_treatment_sequence, d_not_followed_but_ok)
+# n = 48
+df2 <- rbind(d_followed_treatment_sequence, d_not_followed_but_ok, d_not_followed_no_NA)
+
+# day 3 steps using day 1 and 2 treatment on complied + people who followed within subject design
 m1 <- lm(day3_steps ~ day1_treatment + day2_treatment, df)
 summary(m1)
 # ATE (standard error)
@@ -115,6 +156,24 @@ print(paste0("Estimated effect of day2 treatment: ", signif(m1$coefficients[3], 
 # subjects' step counts have as a function of
 # treatment against waht they would typically do
 m2 <- lm(day3_steps ~ day1_treatment + day2_treatment + day1_steps + day2_steps, df)
+summary(m2)
+print(paste0("Estimated effect of day1 treatment: ", signif(m2$coefficients[2], 3),
+             " (", signif(coef(summary(m2))[2,2], 3), ")"))
+print(paste0("Estimated effect of day2 treatment: ", signif(m2$coefficients[3], 3),
+             " (", signif(coef(summary(m2))[3,2], 3), ")"))
+
+# day 3 steps using day 1 and 2 treatment on complied + people who followed within subject design + rest who submitted data without any missing data
+m1 <- lm(day3_steps ~ day1_treatment + day2_treatment, df2)
+summary(m1)
+# ATE (standard error)
+print(paste0("Estimated effect of day1 treatment: ", signif(m1$coefficients[2], 3),
+             " (", signif(coef(summary(m1))[2,2], 3), ")"))
+print(paste0("Estimated effect of day2 treatment: ", signif(m1$coefficients[3], 3),
+             " (", signif(coef(summary(m1))[3,2], 3), ")"))
+# include days1,2 steps as covariates to understand
+# subjects' step counts have as a function of
+# treatment against waht they would typically do
+m2 <- lm(day3_steps ~ day1_treatment + day2_treatment + day1_steps + day2_steps, df2)
 summary(m2)
 print(paste0("Estimated effect of day1 treatment: ", signif(m2$coefficients[2], 3),
              " (", signif(coef(summary(m2))[2,2], 3), ")"))
@@ -132,16 +191,16 @@ stargazer(m1, m2,
 
 ##Condense treatment sequence to 1 treatment##
 ```{r}
-df1 <- df[,-c(4,5,7,8)] 
-df2 <- df[,-c(3,5,6,8)] 
-df3 <- df[,-c(3,4,6,7)] 
-names(df1)[names(df1) == "day1_treatment"] = "treatment"
-names(df1)[names(df1) == "day1_steps"] = "steps"
-names(df2)[names(df2) == "day2_treatment"] = "treatment"
-names(df2)[names(df2) == "day2_steps"] = "steps"
-names(df3)[names(df3) == "day3_treatment"] = "treatment"
-names(df3)[names(df3) == "day3_steps"] = "steps"
-d <- rbind(df1, df2, df3)
+df1.1 <- df[,-c(4,5,7,8)] 
+df2.1 <- df[,-c(3,5,6,8)] 
+df3.1 <- df[,-c(3,4,6,7)] 
+names(df1.1)[names(df1.1) == "day1_treatment"] = "treatment"
+names(df1.1)[names(df1.1) == "day1_steps"] = "steps"
+names(df2.1)[names(df2.1) == "day2_treatment"] = "treatment"
+names(df2.1)[names(df2.1) == "day2_steps"] = "steps"
+names(df3.1)[names(df3.1) == "day3_treatment"] = "treatment"
+names(df3.1)[names(df3.1) == "day3_steps"] = "steps"
+d <- rbind(df1.1, df2.1, df3.1)
 # combine digital and in person treatment as one
 d$treatment2 <- ifelse(d$treatment == 0, 0, 1)
 d$outcome <- ifelse(d$steps > 5000, 1, 0)
@@ -235,15 +294,11 @@ xlab("") + ylab("Step counts") + theme_bw() +
 
 ## For control vs digital and control vs in person ##
 ```{r}
-d$treatment <- factor(d$treatment)
+# d$treatment <- factor(d$treatment)
+d$userId <- factor(d$userId)
 fit_3 <- lm(outcome ~ treatment + userId , d)
 # robust se
 se_3 <- sqrt(diag(vcovHC(fit_3, type = 'HC')))
-
-# remove intercept
-fit_3.1 <- lm(outcome ~ treatment + userId -1, d)
-# robust se
-se_3.1 <- sqrt(diag(vcovHC(fit_3, type = 'HC')))
 
 fit_3_covariates <- lm(outcome ~ treatment + age_range + gender + lives_with_others + know_us + location_lat + location_long, d)
 # robust se
@@ -258,11 +313,11 @@ print(paste0("Estimated effect of treatment (control, in person, digital) + cova
 ```
 
 ```{r, results='asis'}
-stargazer(fit_3.1,
+stargazer(fit_3,
           se=list(se_3),
           omit = c("treatment0"),
           dep.var.labels=c("Steps > 5000"),
-          covariate.labels=c('Commit in person', 'Commit digitally', "User ID"),
+          # covariate.labels=c('Commit digitally', 'Commit in person', "User ID", "Constant"),
           omit.stat=c("all"))
 ```
 
@@ -270,14 +325,15 @@ stargazer(fit_3.1,
 stargazer(fit_3, fit_3_covariates, 
           se=list(se_3, se_3_covariates),
           dep.var.labels=c("Steps > 5000"),
-          covariate.labels=c("Treatment", "User ID", "Age range", "Gender", "Has housemate", "Knows us", "Latitute", "Longitude"),
+          column.labels = c("User ID", "Covariates"),
+          # covariate.labels=c('Commit digitally', 'Commit in person', "User ID", "Age range", "Gender", "Has housemate", "Knows us", "Latitute", "Longitude", "Constant"),
           omit.stat=c("all"))
 ```
 
 ## test hypothesis that telling others make it more likely to take >5000 steps (control vs treatment) ##
 ```{r}
 #suppress intercept term
-fit_2 <- lm(outcome ~ treatment2 + userId -1, d)
+fit_2 <- lm(outcome ~ treatment2 + userId, d)
 # robust se
 se_2 <- sqrt(diag(vcovHC(fit_2, type = 'HC')))
 
@@ -298,28 +354,43 @@ print(paste0("Estimated effect of treatment (control, treatment) + covariates: "
 stargazer(fit_2,
           se=list(se_2),
           dep.var.labels=c("Steps > 5000"),
-          covariate.labels=c("Social commitment", "User ID"),
+          # covariate.labels=c("Social commitment", "User ID"),
           omit.stat=c("all"))
 ```
+
 
 ```{r, results='asis'}
 stargazer(fit_2, fit_2_covariates, 
           se=list(se_2, se_2_covariates),
           dep.var.labels=c("Steps > 5000"),
-          covariate.labels=c("Treatment", "User ID", "Age range", "Gender", "Has housemate", "Knows us", "Latitute", "Longitude"),
+          column.labels = c("User ID", "Covariates"),
+          # covariate.labels=c("Treatment", "User ID", "Age range", "Gender", "Has housemate", "Knows us", "Latitute", "Longitude", "Constant"),
           omit.stat=c("all"))
 ```
 
 ##power calculations##
 ```{r}
-###  Control vs treatment (digital+in person)
+###  Control vs digital
 # since we fail to reject the null hypothesis, 
 # let's calculate number of subjects needed for 80% power
-effect_size_outcome <- cohensD(d[treatment2 == 0]$outcome, d[treatment2 == 1]$outcome)
+effect_size_digital <- cohensD(d[treatment == 0]$steps, d[treatment == 1]$steps)
 #power we got from our experiment
-pwr.t2n.test(n1 = 71, n2 = 82, d = effect_size_outcome, sig.level = 0.05)
+pwr.t2n.test(n1 = nrow(d[treatment == 0,]), n2 = nrow(d[treatment == 1,]), d = effect_size_digital, sig.level = 0.05)
 # 80% powered test
-pwr.t.test(power = 0.8, d = effect_size_outcome, sig.level = 0.05, type = "two.sample")
+pwr.t.test(power = 0.8, d = effect_size_digital, sig.level = 0.05, type = "two.sample")
+
+#
+#
+#
+#
+###  Control vs in person
+# since we fail to reject the null hypothesis, 
+# let's calculate number of subjects needed for 80% power
+effect_size_person <- cohensD(d[treatment == 0]$steps, d[treatment == 2]$steps)
+#power we got from our experiment
+pwr.t2n.test(n1 = nrow(d[treatment == 0,]), n2 = nrow(d[treatment == 2,]), d = effect_size_person, sig.level = 0.05)
+# 80% powered test
+pwr.t.test(power = 0.8, d = effect_size_person, sig.level = 0.05, type = "two.sample")
 
 
 ### extra plots
