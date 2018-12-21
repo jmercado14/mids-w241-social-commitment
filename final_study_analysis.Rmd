@@ -45,7 +45,7 @@ names(d2) <- str_replace_all(names(d2), c(" " = "." , "," = "" ))
 # Both in person and through digital means = 3
 
 d2 <- d2[, .(userId = UserId,
-             treatment_seq = as.integer(Treatment.Seq),
+             treatment_seq = factor(Treatment.Seq),
              day1_treatment = factor(Q6, levels = c('Not applicable', 'Through digital means', 'In person'),
                                                              labels = c(0, 1, 2)), 
              day2_treatment = factor(Q10, levels = c('Not applicable', 'Through digital means', 'In person'),
@@ -78,13 +78,19 @@ d2 <- d2[, .(userId = UserId,
 head(d2, 5)
 
 #Covariate Balance Check 1
-bal.tab(treatment_seq ~ gender + age_range + lives_with_others + know_us + location_lat + location_long, 
+bal.tab(as.numeric(treatment_seq) ~ gender + age_range + lives_with_others + know_us + location_lat + location_long, 
         data = d2)
-cov_check <- lm(treatment_seq ~ gender + age_range + lives_with_others + know_us + location_lat + location_long, 
+cov_check <- lm(as.numeric(treatment_seq) ~ gender + age_range + lives_with_others + know_us + location_lat + location_long, 
                 data = d2)
 summary(cov_check)
 ```
 
+## attrition check
+```{r}
+lm_attrit <- lm(submitted_data ~ treatment_seq + age_range + gender + lives_with_others + know_us + location_lat + location_long, data = d2)
+summary(lm_attrit)
+# know_us is highly predictive of whether or not people attrited. This makes sense.
+```
 
 ##Checking for ordering/priming effect AND adding non-compliant but okay users##
 ##Is previous day's treatment highly predictive of how many steps are taken today?##
@@ -204,11 +210,11 @@ d$outcome <- ifelse(d$steps > 5000, 1, 0)
 head(d, 5)
 
 #Covariate Balance Check
-bal.tab(treatment_seq ~ gender + age_range + lives_with_others + know_us + location_lat + location_long, 
-        data = d)
-cov_check <- lm(treatment_seq ~ gender + age_range + lives_with_others + know_us + location_lat + location_long, 
-                data = d)
-summary(cov_check)
+#bal.tab(treatment_seq ~ gender + age_range + lives_with_others + know_us + location_lat + location_long, 
+#        data = d)
+#cov_check <- lm(treatment_seq ~ gender + age_range + lives_with_others + know_us + location_lat + location_long, 
+#                data = d)
+#summary(cov_check)
 ```
 
 ##Make some pretty plots to show distribution, populatin etc. ##
