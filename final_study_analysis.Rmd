@@ -297,8 +297,8 @@ xlab("") + ylab("Step counts") + theme_bw() +
 # d$treatment <- factor(d$treatment)
 d$userId <- factor(d$userId)
 fit_3 <- lm(outcome ~ treatment + userId , d)
-# robust se
-se_3 <- sqrt(diag(vcovHC(fit_3, type = 'HC')))
+# se clustered based on userID
+se_3 <- coeftest(fit_3, vcovHC(fit_3, type = 'HC', cluster = "userID"))
 
 fit_3_covariates <- lm(outcome ~ treatment + age_range + gender + lives_with_others + know_us + location_lat + location_long, d)
 # robust se
@@ -306,7 +306,7 @@ se_3_covariates <- sqrt(diag(vcovHC(fit_3_covariates, type = 'HC')))
 
 # ATE (standard error)
 print(paste0("Estimated effect of treatment (control, in person, digital): ", signif(fit_3$coefficients[2], 3),
-" (", signif(se_3[2], 3), ")"))
+" (", signif(se_3[2,2], 3), ")"))
 print(paste0("Estimated effect of treatment (control, in person, digital) + covariates: ", signif(fit_3_covariates$coefficients[3], 3),
 " (", signif(se_3_covariates[2], 3), ")"))
 
@@ -334,8 +334,8 @@ stargazer(fit_3, fit_3_covariates,
 ```{r}
 #suppress intercept term
 fit_2 <- lm(outcome ~ treatment2 + userId, d)
-# robust se
-se_2 <- sqrt(diag(vcovHC(fit_2, type = 'HC')))
+#  se clustered based on userID
+se_2 <- coeftest(fit_2, vcovHC(fit_2, type = 'HC', cluster = "userID"))
 
 fit_2_covariates <- lm(outcome ~ treatment2 + age_range + gender + lives_with_others + know_us + location_lat + location_long, d)
 # robust se
