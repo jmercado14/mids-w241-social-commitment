@@ -187,7 +187,7 @@ We do not see that the previous days' treatment assignments to predict the last 
 ```{r, results='asis'}
 stargazer(m1, m2, 
           dep.var.labels=c("Steps - Day 3"),
-          covariate.labels=c("Treatment - Day 1", "Treatment - Day 2", "Steps - Day 1", "Steps - Day 2"),
+          covariate.labels=c("Digital - Day 1", "In person - Day 1", "Digital - Day 2", "In person - Day 2", "Steps - Day 1", "Steps - Day 2"),
           omit.stat=c("all"))
 ```
 
@@ -285,8 +285,8 @@ ggplot(d, aes(x=treatment, y=steps, colour = factor(treatment))) +
 geom_boxplot() + geom_jitter() +
 geom_hline(yintercept=5000, linetype="dashed", color = "red") +
 xlab("") + ylab("Step counts") + theme_bw() +
-    scale_x_discrete(breaks = c(0, 1), 
-                     labels = c('Control', 'Treatment')) +
+    scale_x_discrete(breaks = c(0, 1, 2), 
+                     labels = c('No commitment', 'Digital commitment', "In-person commitment")) +
   theme(legend.position="none")
 
 # control and treatment (digital+in person) when time component removed
@@ -294,7 +294,7 @@ ggplot(d, aes(x=treatment2, y=steps, colour = factor(treatment2))) +
 geom_boxplot() + geom_jitter() +
 geom_hline(yintercept=5000, linetype="dashed", color = "red") +
 xlab("") + ylab("Step counts") + theme_bw() +
-    scale_x_discrete(breaks = c(0, 1), 
+    scale_x_continuous(breaks = c(0, 1), 
                      labels = c('Control', 'Treatment')) +
   theme(legend.position="none")
 
