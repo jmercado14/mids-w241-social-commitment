@@ -19,7 +19,6 @@ library(cobalt)
 library(stringr)
 library(AER)
 library(stargazer)
-library(pander)
 ```
 
 
@@ -260,8 +259,8 @@ summary(cov_check2)
 ```
 
 ```{r, results='asis'}
-stargazer(cov_check1, cov_check2, 
-          dep.var.labels=c("3 levels treatment", "2 levels treatment"),
+stargazer(cov_check2, cov_check1, 
+          dep.var.labels=c("2 levels treatment", "3 levels treatment"),
           covariate.labels=c("Female",
                              "Ages 25-34",
                              "Ages 35-44",
@@ -352,11 +351,6 @@ p_know_us <- ggplot(d.know_us, aes(x=know_us, fill = factor(treatment2))) +
 ggsave("know.png", width = 5, height = 3.5, units = "in",dpi = 300)
 
 
-p_gender
-p_age
-p_others
-p_know_us
-
 grid.arrange(p_gender_no_legend, p_age, p_others, p_know_us,
              ncol = 2)
 
@@ -365,7 +359,8 @@ grid.arrange(p_gender_no_legend, p_age, p_others, p_know_us,
 dist3 <- ggplot(d, aes(x=treatment, y=steps, colour = factor(treatment))) +
 geom_boxplot() + geom_jitter() +
 geom_hline(yintercept=5000, linetype="dashed", color = "red") +
-xlab("") + ylab("Step counts") + theme_bw() + theme(axis.ticks.x = element_blank()) +
+xlab("") + ylab("") + theme_bw() + 
+   theme(axis.text.y = element_blank(), axis.ticks = element_blank()) +
     scale_x_discrete(breaks = c(0, 1, 2), 
                      labels = c('None', 'Digital', "In-person")) +
   theme(legend.position="none")
@@ -374,12 +369,12 @@ xlab("") + ylab("Step counts") + theme_bw() + theme(axis.ticks.x = element_blank
 dist2 <- ggplot(d, aes(x=treatment2, y=steps, colour = factor(treatment2))) +
 geom_boxplot() + geom_jitter() +
 geom_hline(yintercept=5000, linetype="dashed", color = "red") +
-xlab("") + ylab("") + theme_bw() + theme(axis.text.y = element_blank(), axis.ticks = element_blank()) +
+xlab("") + ylab("Step counts") + theme_bw() + theme(axis.ticks.x = element_blank()) +
     scale_x_continuous(breaks = c(0, 1), 
                      labels = c('Control', 'Treatment')) +
   theme(legend.position="none")
 
-grid.arrange(dist3, dist2,
+grid.arrange(dist2, dist3,
              ncol = 2)
 
 ```
@@ -407,11 +402,6 @@ print(paste0("Estimated effect of treatment (control, in person, digital) + cova
 
 
 ```{r, results='asis'}
-# stargazer(model1, model1.beta, 
-#             coef = list(model1$coefficients, 
-#             model1.beta$standardized.coefficients),
-#             type='text')
-
 stargazer(fit_3,
           se=list(se_3[,2]),
           omit = "userId",
@@ -421,8 +411,12 @@ stargazer(fit_3,
           omit.stat=c("all"),
           single.row = TRUE)
 
-
-
+stargazer(fit_3,
+          se=list(se_3[,2]),
+          dep.var.labels=c("Steps > 5000"),
+          covariate.labels=c('Digital commitment', 'In person commitment',"Constant"),
+          omit.stat=c("all"),
+          single.row = TRUE)
 ```
 
 ```{r, results='asis'}
@@ -432,13 +426,18 @@ stargazer(fit_3, fit_3_covariates,
           omit.labels = "Subject IDs ommitted",
           dep.var.labels=c("Steps > 5000"),
           column.labels = c("User ID", "Covariates"),
-          covariate.labels=c('Digital commitment', 'In person commitment',
+          covariate.labels=c('Digital commitment', 
+                             'In person commitment',
                              "Ages 25-34",
                              "Ages 35-44",
                              "Ages 45-54",
                              "Ages 55-64",
                              "Ages 65+", 
-                             "Female","Has housemate", "Knows us","Latitute", "Longitude", "Constant"),
+                             "Female","Has housemate", 
+                             "Knows us",
+                             "Latitute", 
+                             "Longitude", 
+                             "Constant"),
           omit.stat=c("all"),
           single.row = TRUE)
 ```
@@ -472,6 +471,13 @@ stargazer(fit_2,
           covariate.labels=c('Social commitment', "Constant"),
           omit.stat=c("all"),
           single.row = TRUE)
+
+stargazer(fit_2,
+          se=list(se_2[,2]),
+          dep.var.labels=c("Steps > 5000"),
+          covariate.labels=c('Social commitment', "Constant"),
+          omit.stat=c("all"),
+          single.row = TRUE)
 ```
 
 
@@ -488,34 +494,47 @@ stargazer(fit_2, fit_2_covariates,
                              "Ages 45-54",
                              "Ages 55-64",
                              "Ages 65+", 
-                             "Female","Has housemate", "Knows us","Latitute", "Longitude", "Constant"),          
+                             "Female",
+                             "Has housemate", 
+                             "Knows us",
+                             "Latitute", 
+                             "Longitude", 
+                             "Constant"),          
           omit.stat=c("all"),
           single.row = TRUE)
+
+
+
 ```
 
 ##power calculations##
+.  
+.  
+.  
+.  
+.  
+.  
 ```{r}
-###  Control vs digital
-# since we fail to reject the null hypothesis, 
-# let's calculate number of subjects needed for 80% power
-effect_size_digital <- cohensD(d[treatment == 0]$steps, d[treatment == 1]$steps)
+### power analysis
+###  Control vs treatment (digital + in person)
+effect_size <- cohensD(d[treatment2 == 0]$outcome, d[treatment2 == 1]$outcome)
 #power we got from our experiment
-pwr.t2n.test(n1 = nrow(d[treatment == 0,]), n2 = nrow(d[treatment == 1,]), d = effect_size_digital, sig.level = 0.05)
+pwr.t2n.test(n1 = nrow(d[treatment2 == 0,]), n2 = nrow(d[treatment2 == 1,]), d = effect_size, sig.level = 0.05)
 # 80% powered test
-pwr.t.test(power = 0.8, d = effect_size_digital, sig.level = 0.05, type = "two.sample")
+pwr.t.test(power = 0.8, d = effect_size, sig.level = 0.05, type = "two.sample")
 
 #
 #
 #
 #
-###  Control vs in person
-# since we fail to reject the null hypothesis, 
-# let's calculate number of subjects needed for 80% power
-effect_size_person <- cohensD(d[treatment == 0]$steps, d[treatment == 2]$steps)
-#power we got from our experiment
-pwr.t2n.test(n1 = nrow(d[treatment == 0,]), n2 = nrow(d[treatment == 2,]), d = effect_size_person, sig.level = 0.05)
-# 80% powered test
-pwr.t.test(power = 0.8, d = effect_size_person, sig.level = 0.05, type = "two.sample")
+# ###  Control vs in person
+# # since we fail to reject the null hypothesis, 
+# # let's calculate number of subjects needed for 80% power
+# effect_size_person <- cohensD(d[treatment == 0]$steps, d[treatment == 2]$steps)
+# #power we got from our experiment
+# pwr.t2n.test(n1 = nrow(d[treatment == 0,]), n2 = nrow(d[treatment == 2,]), d = effect_size_person, sig.level = 0.05)
+# # 80% powered test
+# pwr.t.test(power = 0.8, d = effect_size_person, sig.level = 0.05, type = "two.sample")
 
 
 ### extra plots
@@ -551,6 +570,7 @@ xlab("") + ylab("Step counts") + theme_bw() +
 
 
 ```
+
 
 
 
