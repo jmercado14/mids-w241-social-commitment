@@ -15,6 +15,7 @@ library(data.table)
 library(lmtest)
 library(pwr)
 library(lsr)
+library(effsize)
 library(cobalt)
 library(stringr)
 library(AER)
@@ -360,10 +361,10 @@ dist3 <- ggplot(d, aes(x=treatment, y=steps, colour = factor(treatment))) +
 geom_boxplot() + geom_jitter() +
 geom_hline(yintercept=5000, linetype="dashed", color = "red") +
 xlab("") + ylab("") + theme_bw() + 
-   theme(axis.text.y = element_blank(), axis.ticks = element_blank()) +
-    scale_x_discrete(breaks = c(0, 1, 2), 
-                     labels = c('None', 'Digital', "In-person")) +
-  theme(legend.position="none")
+   theme(axis.text.y = element_blank(), axis.ticks = element_blank()) 
+    # scale_x_discrete(breaks = c(0, 1, 2), 
+                     # labels = c('None', 'Digital', "In-person")) +
+  # theme(legend.position="none")
 
 # control and treatment (digital+in person) when time component removed
 dist2 <- ggplot(d, aes(x=treatment2, y=steps, colour = factor(treatment2))) +
@@ -517,6 +518,9 @@ stargazer(fit_2, fit_2_covariates,
 ```{r}
 ### power analysis
 ###  Control vs treatment (digital + in person)
+# hedge's g
+(cohen.d(d[treatment2 == 0]$outcome, d[treatment2 == 1]$outcome, na.rm = T, hedges.correction = T))
+# cohen's d
 effect_size <- cohensD(d[treatment2 == 0]$outcome, d[treatment2 == 1]$outcome)
 #power we got from our experiment
 pwr.t2n.test(n1 = nrow(d[treatment2 == 0,]), n2 = nrow(d[treatment2 == 1,]), d = effect_size, sig.level = 0.05)
